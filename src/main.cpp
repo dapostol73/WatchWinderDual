@@ -1,160 +1,185 @@
 //**************************************************************
-//Commande de moteur pas-à-pas unipolaire 4 fils
-//tiptopboards.com 05/12/2013
-// Driver ULN2003 et moteur réducté au 1:64
+// Controller for 4-wire unipolar stepper motors
+// tiptopboards.com 05/12/2013
+// Driver ULN2003 and motor reduced to 1:64
 //
 //**************************************************************
-//Inclure la librairie stepper.h
+//Include stepper.h library
 #include <Arduino.h>
 #include <Stepper.h>
-#define STEPS 100
 
-const int bouton1 = 2;     // Numéro de la broche à laquelle est connecté le bouton poussoir 1
-const int bouton2 = 3;      // Numéro de la broche à laquelle est connectée le bouton poussoir 2
+#define DEBUG true // To enable debug logic
+#define ROT_STEPS 100 // Number of steps
+#define ROT_SPEED 300 // Speed of steps
+#define ROT_PAUSE 2000 // time to pause be 
+#define BUTTON1 10 // Pin number to which push button 1 is connected
+#define BUTTON2 11 // Pin number to which push button 2 is connected
+#define LED1 12 // Pin number to which led 1 is connected
+#define LED2 13 // Pin number to which led 2 is connected
 
-// Déclaration des variables :
-int etatBouton1 = 0;         // variable qui sera utilisée pour stocker l'état du bouton 1
-int etatBouton2 = 0;         // variable qui sera utilisée pour stocker l'état du bouton 2
+// Declaration of variables :
+bool serial_init = false;
+int counter = 0;
+int button_state1 = 0;    // variable that will be used to store the state of button 1
+int button_state2 = 0;    // variable that will be used to store the state of button 2
 
-//Créer une instance de la classe stepper
-//Le moteur (fils 1 2 3 4) est branché sur les sorties 9 10 11 12 de l'Arduino (et sur GND, +V)
-Stepper small_stepper1(STEPS, 9, 11, 10, 12);     // Sens horaire
-Stepper small_stepper2(STEPS, 5, 7, 6, 8);     // Sens horaire
+// Create instances of the stepper class
+// The motor (wires 1 2 3 4) is connected to the outputs 9 10 11 12 of the Arduino (and to GND, + V)
+// Stepper small_stepper(STEPS, 9, 7, 8, 6);  // Anti-clockwise by reversing 8 and 11 (if preferred)
+Stepper small_stepper1(ROT_STEPS, 6, 8, 7, 9);   // Clockwise
+Stepper small_stepper2(ROT_STEPS, 2, 4, 3, 5);      // Clockwise
 
-
-//Stepper small_stepper(STEPS, 11, 10, 9, 8);  // Sens anti-horaire en inversant 8 et 11 (si on préfère)
-int  Steps2Take = 0;  //Nombre de pas de rotation demandé au moteur
-long temps =0;          //Durée de rotation pour un tour
+int  steps_to_take = 0;    // Number of rotation steps requested from the motor
+long rotation_time =0;          // Rotation time for one turn
 //************************************************************
-// Pour un moteur de ce type : http://tiptopboards.com/151-moteur-pas-%C3%A0-pas-r%C3%A9duct%C3%A9-de-5v-4-fils-driver-.html
-// 64 pas par tour, 4 phases, angle de 5.625° selon les spécifications du moteur
-// Démultiplication 1:64 pour ce moteur réducté mécaniquement
-//   360° / 5.625° * 64 = 4096 angles avec la démultiplication
-//   360° / 5.625° * 64  * 4 bobines / 2 bipolaire = 2048 step / tour
+// For an engine of this type : http://tiptopboards.com/151-moteur-pas-%C3%A0-pas-r%C3%A9duct%C3%A9-de-5v-4-fils-driver-.html
+// 64 steps per revolution, 4 phases, 5.625 ° angle depending on motor specification
+// Ratio 1:64 for this mechanically reduced engine
+//   360° / 5.625° * 64 = 4096 angles with the gear ratio
+//   360° / 5.625° * 64  * 4 coils / 2 bipolar = 2048 step / turn
 
-int Compteur;
+void serialPrintLine(const String &text)
+{
+    if (DEBUG && !serial_init)
+    {
+        Serial.begin(9600);  // 9600 bps
+        serial_init = true;
+    }
+    if (DEBUG)
+    {
+        Serial.println(text.c_str());
+    }
+}
+
 void setup()
 {
-    Serial.begin(9600);     // 9600 bps
-    Serial.println("Test de moteur pas a pas");
-    pinMode(4, OUTPUT); // Declare le Pin 5 comme sortie pour la LED
-    // indique que la broche led est une sortie :
-    pinMode(bouton1, INPUT);      
-    // indique que la broche bouton est une entrée :
-    pinMode(bouton2, INPUT);
+    serialPrintLine("Stepper motor test");
+    // initialize that the led pin is an output:
+    pinMode(LED1, OUTPUT);
+    pinMode(LED2, OUTPUT);
+    // initialize that the button pin is an input :
+    pinMode(BUTTON1, INPUT_PULLUP);
+    pinMode(BUTTON2, INPUT_PULLUP);
+    // initialize the stepper motor speed
+    small_stepper1.setSpeed(ROT_SPEED); // Speed ​​of 300 (max) reduce this figure for slower movement
+    small_stepper2.setSpeed(ROT_SPEED); // Speed ​​of 300 (max) reduce this figure for slower movement
+    // 100 allows a high torque > 300 the motor vibrates without turning
 }
 
 void loop()
 {
-    digitalWrite(4, HIGH);
-    delay(100);
-    // lit l'état du bouton et stocke le résultat dans etatBouton
-    etatBouton1 = digitalRead(bouton1);
-    etatBouton2 = digitalRead(bouton2);
-    Serial.println("Moteur en marche ");
-    //Faire tourner le moteur
-    small_stepper1.setSpeed(300); //Vitesse de 300 (max) réduire ce chiffre pour un mouvement plus lent
-    small_stepper2.setSpeed(300); //Vitesse de 300 (max) réduire ce chiffre pour un mouvement plus lent
-    //100 permet d'avoir un couple élevé >300 le moteur vibre sans tourner
+    // reads the state of the button and stores the result in stateButton
+    button_state1 = digitalRead(BUTTON1);
+    button_state2 = digitalRead(BUTTON2);
+    serialPrintLine("Running engine");
 
-    if (Compteur<=30 && etatBouton1 == HIGH && etatBouton2 == LOW){
-        Serial.println("LOOP1 ");
-
-        Steps2Take  = -4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper1.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(2000);  //pause
-
-        Steps2Take  = 4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper1.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(2000);  //pause
-
-        // Glignotement de la LED
-        digitalWrite(4, LOW);
-        delay(100);
-        digitalWrite(4, HIGH);
-        delay(100); 
-        Compteur++; //Ajoute 1 au Compteur
+    if (button_state1 == HIGH)
+    {
+        digitalWrite(LED1, LOW);
     }
-    else if (Compteur<=30 && etatBouton1 == LOW && etatBouton2 == HIGH){
-        Serial.println("LOOP2 ");
-        Steps2Take  = -4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper2.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(2000);  //pause
-
-        Steps2Take  = 4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper2.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(2000);  //pause
-
-        // Glignotement de la LED
-        digitalWrite(4, LOW);
-        delay(100);
-        digitalWrite(4, HIGH);
-        delay(100); 
-        Compteur++; //Ajoute 1 au Compteur
+    if (button_state2 == HIGH)
+    {
+        digitalWrite(LED2, LOW);
     }
-        else if (Compteur<=30 && etatBouton1 == LOW && etatBouton2 == LOW){
-        Serial.println("LOOP1&2 ");
-        Steps2Take  = -4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper1.step(Steps2Take);  //Ca tourne
-        small_stepper2.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(0);  //pause
 
-        Steps2Take  = 4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-        //Pour tourner à l'envers de 6 fois 1/30eme de tour, simplement multiplier Steps2Take par 6/30 et mettre un moins pour inverser le sens
-        // Exemple  Steps2Take  = -6*2048/30;
-        //temps = millis();
-        small_stepper1.step(Steps2Take);  //Ca tourne
-        small_stepper2.step(Steps2Take);  //Ca tourne
-        //temps =  millis()- temps ;  //Chronomètre un rour complet  6.236 sec par tour à vitesse 200
-        //Serial.println(temps);      //Affiche le temps (en ms) pour un tour complet
-        delay(0);  //pause
+    if (counter <= 30)
+    {
+        if (button_state1 == HIGH && button_state2 == LOW)
+        {
+            serialPrintLine("Spin Watch 1");
+            digitalWrite(LED1, HIGH); // Turn on Led 1
 
-        // Glignotement de la LED
-        digitalWrite(4, LOW);
-        delay(100);
-        digitalWrite(4, HIGH);
-        delay(100); 
-        Compteur++; //Ajoute 1 au Compteur
+            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Example  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper1.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            steps_to_take  = 4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Example  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper1.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            counter++; // Add 1 to the counter
+        }
+        else if (button_state1 == LOW && button_state2 == HIGH)
+        {
+            serialPrintLine("Spin Watch 2");
+            digitalWrite(LED2, HIGH); // Turn on Led 2
+
+            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Exemple  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper2.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            steps_to_take  = 4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Exemple  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper2.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            counter++; // Add 1 to the counter
+        }
+        else if (button_state1 == LOW && button_state2 == LOW)
+        {
+            serialPrintLine("Spin Both Watches");
+            digitalWrite(LED1, HIGH); // Turn on Led 1
+            digitalWrite(LED2, HIGH); // Turn on Led 2
+
+            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Exemple  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper1.step(steps_to_take);  //It turns
+            small_stepper2.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            steps_to_take  = 4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
+            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+            // Exemple  steps_to_take  = -6*2048/30;
+            //rotation_time = millis();
+            small_stepper1.step(steps_to_take);  //It turns
+            small_stepper2.step(steps_to_take);  //It turns
+            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            //serialPrintLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
+            delay(ROT_PAUSE);  //pause
+
+            counter++; // Add 1 to the counter
+        }
+        else if (button_state1 == HIGH && button_state2 == HIGH)
+        {
+            // logic should not happen, if both buttons are off,
+            // then we reset the state regardless of counter
+            serialPrintLine("System is Disabled");
+            counter = 0;
+        }
     }
-    else if (Compteur<=30 && etatBouton1 == HIGH && etatBouton2 == HIGH){
-        Serial.println("BUGINTER ");
-        Compteur++; //Ajoute 1 au Compteur
+    else if (counter > 30 && counter <= 180)
+    {
+        // pause the system for 150 x 2 seconds = 300 seconds 6 minutes
+        // should figure out if we want to flash the leds
+        serialPrintLine("PAUSED");
+        delay(ROT_PAUSE);
+        counter++; // Add 1 to the counter
     }
-    else if (Compteur <=180){
-        Serial.println("PAUSE ");
-        digitalWrite(4, LOW);
-        delay(1000);
-        digitalWrite(4, HIGH);
-        delay(1000);
-        // 10 sec Ecoulé
-        Compteur++; //Ajoute 1 au Compteur
-    }
-    else {
-        Compteur=0; //Réinitialise le Compteur
+    else
+    {
+        counter = 0; // Reset the counter
     }
 }
