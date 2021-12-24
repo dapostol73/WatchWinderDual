@@ -11,7 +11,7 @@
 #define DEBUG true // To enable debug logic
 #define ROT_STEPS 100 // Number of steps
 #define ROT_SPEED 300 // Speed of steps
-#define ROT_PAUSE 2000 // time to pause be 
+#define ROT_PAUSE 2000 // time to pause be
 #define BUTTON1 10 // Pin number to which push button 1 is connected
 #define BUTTON2 11 // Pin number to which push button 2 is connected
 #define LED1 12 // Pin number to which led 1 is connected
@@ -29,8 +29,14 @@ int button_state2 = 0;    // variable that will be used to store the state of bu
 Stepper small_stepper1(ROT_STEPS, 6, 8, 7, 9);   // Clockwise
 Stepper small_stepper2(ROT_STEPS, 2, 4, 3, 5);      // Clockwise
 
-int  steps_to_take = 0;    // Number of rotation steps requested from the motor
-long rotation_time =0;          // Rotation time for one turn
+// Number of rotation steps requested from the motor.
+// One full rotation with 2048 steps (1 turn about 4.5sec)
+// To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
+// Example  steps_to_take  = -6*2048/30;
+int const steps_to_take = 4096; 
+
+//long rotation_time = 0; // Rotation time for one turn for debuggin
+
 //************************************************************
 // For an engine of this type : http://tiptopboards.com/151-moteur-pas-%C3%A0-pas-r%C3%A9duct%C3%A9-de-5v-4-fils-driver-.html
 // 64 steps per revolution, 4 phases, 5.625 ° angle depending on motor specification
@@ -76,10 +82,12 @@ void loop()
     if (button_state1 == HIGH)
     {
         digitalWrite(LED1, LOW);
+        serialPrintLine("Button 1 State Low");
     }
     if (button_state2 == HIGH)
     {
         digitalWrite(LED2, LOW);
+        serialPrintLine("Button 2 State Low");
     }
 
     if (counter <= 30)
@@ -89,18 +97,12 @@ void loop()
             serialPrintLine("Spin Watch 1");
             digitalWrite(LED1, HIGH); // Turn on Led 1
 
-            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Example  steps_to_take  = -6*2048/30;
             //rotation_time = millis();
-            small_stepper1.step(steps_to_take);  //It turns
+            small_stepper1.step(-steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            steps_to_take  = 4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Example  steps_to_take  = -6*2048/30;
             //rotation_time = millis();
             small_stepper1.step(steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
@@ -114,20 +116,13 @@ void loop()
             serialPrintLine("Spin Watch 2");
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Exemple  steps_to_take  = -6*2048/30;
-            //rotation_time = millis();
             small_stepper2.step(steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            steps_to_take  = 4096;  // Une rotation complète avec 2048 pas (1 tour environ 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Exemple  steps_to_take  = -6*2048/30;
             //rotation_time = millis();
-            small_stepper2.step(steps_to_take);  //It turns
+            small_stepper2.step(-steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
@@ -140,22 +135,16 @@ void loop()
             digitalWrite(LED1, HIGH); // Turn on Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            steps_to_take  = -4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Exemple  steps_to_take  = -6*2048/30;
             //rotation_time = millis();
-            small_stepper1.step(steps_to_take);  //It turns
+            small_stepper1.step(-steps_to_take);  //It turns
             small_stepper2.step(steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            steps_to_take  = 4096;  // One full rotation with 2048 steps (1 turn about 4.5sec)
-            // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-            // Exemple  steps_to_take  = -6*2048/30;
             //rotation_time = millis();
             small_stepper1.step(steps_to_take);  //It turns
-            small_stepper2.step(steps_to_take);  //It turns
+            small_stepper2.step(-steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
@@ -172,11 +161,21 @@ void loop()
     }
     else if (counter > 30 && counter <= 180)
     {
-        // pause the system for 150 x 2 seconds = 300 seconds 6 minutes
-        // should figure out if we want to flash the leds
-        serialPrintLine("PAUSED");
-        delay(ROT_PAUSE);
-        counter++; // Add 1 to the counter
+        if (button_state1 == HIGH && button_state2 == HIGH)
+        {
+            // logic should not happen, if both buttons are off,
+            // then we reset the state regardless of counter
+            serialPrintLine("System is Disabled");
+            counter = 0;
+        }
+        else
+        {
+            // pause the system for 150 x 2 seconds = 300 seconds 6 minutes
+            // should figure out if we want to flash the leds
+            serialPrintLine("PAUSED");
+            delay(ROT_PAUSE);
+            counter++; // Add 1 to the counter
+        }
     }
     else
     {
