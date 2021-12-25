@@ -8,10 +8,12 @@
 #include <Arduino.h>
 #include <Stepper.h>
 
-#define DEBUG true // To enable debug logic
+#define DEBUG false // To enable debug logic
 #define ROT_STEPS 100 // Number of steps
 #define ROT_SPEED 300 // Speed of steps
 #define ROT_PAUSE 2000 // time to pause be
+#define ROT_COUNT 18 // number of rotations per a cycle
+#define PAUSE_COUNT 300 // number of times to pause using rot pause delay
 #define BUTTON1 10 // Pin number to which push button 1 is connected
 #define BUTTON2 11 // Pin number to which push button 2 is connected
 #define LED1 12 // Pin number to which led 1 is connected
@@ -79,23 +81,19 @@ void loop()
     button_state2 = digitalRead(BUTTON2);
     serialPrintLine("Running engine");
 
-    if (button_state1 == HIGH)
+    if (counter == 0)
     {
         digitalWrite(LED1, LOW);
-        serialPrintLine("Button 1 State Low");
-    }
-    if (button_state2 == HIGH)
-    {
         digitalWrite(LED2, LOW);
-        serialPrintLine("Button 2 State Low");
     }
 
-    if (counter <= 30)
+    if (counter <= ROT_COUNT)
     {
         if (button_state1 == HIGH && button_state2 == LOW)
         {
             serialPrintLine("Spin Watch 1");
             digitalWrite(LED1, HIGH); // Turn on Led 1
+            digitalWrite(LED2, LOW); // Turn off Led 2
 
             //rotation_time = millis();
             small_stepper1.step(-steps_to_take);  //It turns
@@ -114,6 +112,7 @@ void loop()
         else if (button_state1 == LOW && button_state2 == HIGH)
         {
             serialPrintLine("Spin Watch 2");
+            digitalWrite(LED1, LOW); // Turn off Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
             small_stepper2.step(steps_to_take);  //It turns
@@ -159,7 +158,7 @@ void loop()
             counter = 0;
         }
     }
-    else if (counter > 30 && counter <= 180)
+    else if (counter <= (ROT_COUNT + PAUSE_COUNT))
     {
         if (button_state1 == HIGH && button_state2 == HIGH)
         {
@@ -170,8 +169,17 @@ void loop()
         }
         else
         {
-            // pause the system for 150 x 2 seconds = 300 seconds 6 minutes
+            // pause the system for 300 x 2 seconds = 600 seconds 10 minutes
             // should figure out if we want to flash the leds
+            if (button_state1 == LOW)
+            {
+                digitalWrite(LED1, LOW); // Turn off Led 1
+            }
+            if (button_state2 == LOW)
+            {
+                digitalWrite(LED2, LOW); // Turn off Led 1
+
+            }
             serialPrintLine("PAUSED");
             delay(ROT_PAUSE);
             counter++; // Add 1 to the counter
