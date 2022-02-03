@@ -29,8 +29,8 @@ int button_state2 = 0;    // variable that will be used to store the state of bu
 
 // Create instances of the stepper class
 // The motor (wires 1 2 3 4) is connected to the outputs 9 10 11 12 of the Arduino (and to GND, + V)
-AccelStepper small_stepper1(AccelStepper::HALF4WIRE, 6, 8, 7, 9);      // Clockwise
-AccelStepper small_stepper2(AccelStepper::HALF4WIRE, 2, 4, 3, 5);      // Clockwise
+AccelStepper small_stepper1(AccelStepper::HALF4WIRE, 2, 4, 3, 5);      // Clockwise
+AccelStepper small_stepper2(AccelStepper::HALF4WIRE, 6, 8, 7, 9);      // Clockwise
 
 // Number of rotation steps requested from the motor.
 // One full rotation with 2048 steps (1 turn about 4.5sec)
@@ -38,7 +38,10 @@ AccelStepper small_stepper2(AccelStepper::HALF4WIRE, 2, 4, 3, 5);      // Clockw
 // Example  steps_to_take  = -6*2048/30;
 long const steps_to_take = ROT_STEPS * (long)ROT_MULTI;
 
-//long rotation_time = 0; // Rotation time for one turn for debuggin
+// Rotation time for one turn for debuggin
+long rotation_time = 0;
+char rotation_info[30];
+char rotation_text[100];
 
 //************************************************************
 // For an engine of this type : http://tiptopboards.com/151-moteur-pas-%C3%A0-pas-r%C3%A9duct%C3%A9-de-5v-4-fils-driver-.html
@@ -60,20 +63,14 @@ void serialPrintLine(const String &text)
     }
 }
 
-void stepperMoveAndRun(int steppers, long position)
+void serailPrintRotationLine(const long time)
 {
-    if (steppers == 0)
+    if (DEBUG)
     {
-        small_stepper1.runToNewPosition(position);
-        small_stepper2.runToNewPosition(position);
-    }
-    else if (steppers == 1)
-    {
-        small_stepper1.runToNewPosition(position);
-    }
-    else if (steppers == 2)
-    {
-        small_stepper2.runToNewPosition(position);
+        ltoa(time, rotation_info, 10);
+        strcpy(rotation_text, "Rotation Time in MS - ");
+        strcat(rotation_text, rotation_info);
+        serialPrintLine(rotation_text);
     }
 }
 
@@ -115,16 +112,16 @@ void loop()
             digitalWrite(LED1, HIGH); // Turn on Led 1
             digitalWrite(LED2, LOW); // Turn off Led 2
 
-            //rotation_time = millis();
-            stepperMoveAndRun(1, -steps_to_take);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
+            rotation_time = millis();
+            small_stepper1.runToNewPosition(-steps_to_take);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            //rotation_time = millis();
-            stepperMoveAndRun(1, 0);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            rotation_time = millis();
+            small_stepper1.runToNewPosition(0);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             counter++; // Add 1 to the counter
@@ -135,15 +132,15 @@ void loop()
             digitalWrite(LED1, LOW); // Turn off Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            stepperMoveAndRun(2, steps_to_take);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
+            small_stepper2.runToNewPosition(steps_to_take);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            //rotation_time = millis();
-            stepperMoveAndRun(2, 0);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            rotation_time = millis();
+            small_stepper2.runToNewPosition(0);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             counter++; // Add 1 to the counter
@@ -154,18 +151,18 @@ void loop()
             digitalWrite(LED1, HIGH); // Turn on Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            //rotation_time = millis();
-            stepperMoveAndRun(1, -steps_to_take);  //It turns
-            stepperMoveAndRun(2, steps_to_take);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
+            rotation_time = millis();
+            small_stepper1.runToNewPosition(-steps_to_take);  //It turns
+            small_stepper2.runToNewPosition(steps_to_take);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
-            //rotation_time = millis();
-            stepperMoveAndRun(1, 0);  //It turns
-            stepperMoveAndRun(2, 0);  //It turns
-            //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            //serialPrintLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
+            rotation_time = millis();
+            small_stepper1.runToNewPosition(0);  //It turns
+            small_stepper2.runToNewPosition(0);  //It turns
+            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
+            serailPrintRotationLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             counter++; // Add 1 to the counter
