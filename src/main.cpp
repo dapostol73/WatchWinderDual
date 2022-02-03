@@ -6,11 +6,13 @@
 //**************************************************************
 //Include stepper.h library
 #include <Arduino.h>
-#include <Stepper.h>
+#include <AccelStepper.h>
 
 #define DEBUG false // To enable debug logic
-#define ROT_STEPS 100 // Number of steps
-#define ROT_SPEED 300 // Speed of steps
+#define ROT_MULTI 8 // Number of times to per a loop 
+#define ROT_STEPS 4096 // Number of steps for 1 Rotation
+#define ROT_SPEED 2000 // Speed ​​of 300 (max) reduce this figure for slower movement
+#define ROT_ACCEL 1000 // Speed ​​of 300 (max) reduce this figure for slower movement
 #define ROT_PAUSE 2000 // time to pause be
 #define ROT_COUNT 18 // number of rotations per a cycle
 #define PAUSE_COUNT 300 // number of times to pause using rot pause delay
@@ -27,15 +29,14 @@ int button_state2 = 0;    // variable that will be used to store the state of bu
 
 // Create instances of the stepper class
 // The motor (wires 1 2 3 4) is connected to the outputs 9 10 11 12 of the Arduino (and to GND, + V)
-// Stepper small_stepper(STEPS, 9, 7, 8, 6);  // Anti-clockwise by reversing 8 and 11 (if preferred)
-Stepper small_stepper1(ROT_STEPS, 6, 8, 7, 9);   // Clockwise
-Stepper small_stepper2(ROT_STEPS, 2, 4, 3, 5);      // Clockwise
+AccelStepper small_stepper1(AccelStepper::HALF4WIRE, 6, 8, 7, 9);      // Clockwise
+AccelStepper small_stepper2(AccelStepper::HALF4WIRE, 2, 4, 3, 5);      // Clockwise
 
 // Number of rotation steps requested from the motor.
 // One full rotation with 2048 steps (1 turn about 4.5sec)
 // To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
 // Example  steps_to_take  = -6*2048/30;
-int const steps_to_take = 4096; 
+long const steps_to_take = ROT_STEPS * (long)ROT_MULTI;
 
 //long rotation_time = 0; // Rotation time for one turn for debuggin
 
@@ -59,6 +60,23 @@ void serialPrintLine(const String &text)
     }
 }
 
+void stepperMoveAndRun(int steppers, long position)
+{
+    if (steppers == 0)
+    {
+        small_stepper1.runToNewPosition(position);
+        small_stepper2.runToNewPosition(position);
+    }
+    else if (steppers == 1)
+    {
+        small_stepper1.runToNewPosition(position);
+    }
+    else if (steppers == 2)
+    {
+        small_stepper2.runToNewPosition(position);
+    }
+}
+
 void setup()
 {
     serialPrintLine("Stepper motor test");
@@ -69,8 +87,10 @@ void setup()
     pinMode(BUTTON1, INPUT_PULLUP);
     pinMode(BUTTON2, INPUT_PULLUP);
     // initialize the stepper motor speed
-    small_stepper1.setSpeed(ROT_SPEED); // Speed ​​of 300 (max) reduce this figure for slower movement
-    small_stepper2.setSpeed(ROT_SPEED); // Speed ​​of 300 (max) reduce this figure for slower movement
+    small_stepper1.setMaxSpeed(ROT_SPEED);
+    small_stepper2.setMaxSpeed(ROT_SPEED);
+    small_stepper1.setAcceleration(ROT_ACCEL);
+    small_stepper2.setAcceleration(ROT_ACCEL);
     // 100 allows a high torque > 300 the motor vibrates without turning
 }
 
@@ -96,13 +116,13 @@ void loop()
             digitalWrite(LED2, LOW); // Turn off Led 2
 
             //rotation_time = millis();
-            small_stepper1.step(-steps_to_take);  //It turns
+            stepperMoveAndRun(1, -steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             //rotation_time = millis();
-            small_stepper1.step(steps_to_take);  //It turns
+            stepperMoveAndRun(1, 0);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
@@ -115,13 +135,13 @@ void loop()
             digitalWrite(LED1, LOW); // Turn off Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            small_stepper2.step(steps_to_take);  //It turns
+            stepperMoveAndRun(2, steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             //rotation_time = millis();
-            small_stepper2.step(-steps_to_take);  //It turns
+            stepperMoveAndRun(2, 0);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
@@ -135,15 +155,15 @@ void loop()
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
             //rotation_time = millis();
-            small_stepper1.step(-steps_to_take);  //It turns
-            small_stepper2.step(steps_to_take);  //It turns
+            stepperMoveAndRun(1, -steps_to_take);  //It turns
+            stepperMoveAndRun(2, steps_to_take);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
 
             //rotation_time = millis();
-            small_stepper1.step(steps_to_take);  //It turns
-            small_stepper2.step(-steps_to_take);  //It turns
+            stepperMoveAndRun(1, 0);  //It turns
+            stepperMoveAndRun(2, 0);  //It turns
             //rotation_time =  millis()- rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             //serialPrintLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
             delay(ROT_PAUSE);  //pause
