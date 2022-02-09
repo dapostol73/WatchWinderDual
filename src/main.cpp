@@ -9,13 +9,12 @@
 #include <AccelStepper.h>
 
 #define DEBUG false // To enable debug logic
-#define ROT_MULTI 8 // Number of times to per a loop 
+#define ROT_MULTI 5 // Number of times to per a loop 
 #define ROT_STEPS 4096 // Number of steps for 1 Rotation
 #define ROT_SPEED 2000 // Speed ​​of 300 (max) reduce this figure for slower movement
 #define ROT_ACCEL 1000 // Speed ​​of 300 (max) reduce this figure for slower movement
-#define ROT_PAUSE 2000 // time to pause be
-#define ROT_COUNT 18 // number of rotations per a cycle
-#define PAUSE_COUNT 300 // number of times to pause using rot pause delay
+#define ROT_COUNT 30 // number of rotations per a cycle
+#define PAUSE_COUNT 300 // number of times to pause using in seconds
 #define BUTTON1 10 // Pin number to which push button 1 is connected
 #define BUTTON2 11 // Pin number to which push button 2 is connected
 #define LED1 12 // Pin number to which led 1 is connected
@@ -114,15 +113,10 @@ void loop()
 
             rotation_time = millis();
             small_stepper1.runToNewPosition(-steps_to_take);  //It turns
-            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            serailPrintRotationLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
-
-            rotation_time = millis();
             small_stepper1.runToNewPosition(0);  //It turns
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
+            delay(25000);  //pause
 
             counter++; // Add 1 to the counter
         }
@@ -132,16 +126,12 @@ void loop()
             digitalWrite(LED1, LOW); // Turn off Led 1
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
-            small_stepper2.runToNewPosition(steps_to_take);  //It turns
-            rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
-            serailPrintRotationLine(rotation_time);      //Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
-
             rotation_time = millis();
+            small_stepper2.runToNewPosition(steps_to_take);  //It turns
             small_stepper2.runToNewPosition(0);  //It turns
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
+            delay(25000);  //pause
 
             counter++; // Add 1 to the counter
         }
@@ -153,17 +143,17 @@ void loop()
 
             rotation_time = millis();
             small_stepper1.runToNewPosition(-steps_to_take);  //It turns
-            small_stepper2.runToNewPosition(steps_to_take);  //It turns
+            small_stepper1.runToNewPosition(0);  //It turns
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
+            delay(2500);  //pause
 
             rotation_time = millis();
-            small_stepper1.runToNewPosition(0);  //It turns
+            small_stepper2.runToNewPosition(steps_to_take);  //It turns
             small_stepper2.runToNewPosition(0);  //It turns
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
-            delay(ROT_PAUSE);  //pause
+            delay(2500);  //pause
 
             counter++; // Add 1 to the counter
         }
@@ -198,7 +188,7 @@ void loop()
 
             }
             serialPrintLine("PAUSED");
-            delay(ROT_PAUSE);
+            delay(1000);
             counter++; // Add 1 to the counter
         }
     }
