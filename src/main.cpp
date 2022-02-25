@@ -105,7 +105,7 @@ void loop()
 
     if (counter <= ROT_COUNT)
     {
-        if (button_state1 == HIGH && button_state2 == LOW)
+        if (button_state1 == LOW && button_state2 == HIGH)
         {
             serialPrintLine("Spin Watch 1");
             digitalWrite(LED1, HIGH); // Turn on Led 1
@@ -120,7 +120,7 @@ void loop()
 
             counter++; // Add 1 to the counter
         }
-        else if (button_state1 == LOW && button_state2 == HIGH)
+        else if (button_state1 == HIGH && button_state2 == LOW)
         {
             serialPrintLine("Spin Watch 2");
             digitalWrite(LED1, LOW); // Turn off Led 1
