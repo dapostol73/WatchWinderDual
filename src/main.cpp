@@ -6,13 +6,9 @@
 //**************************************************************
 //Include stepper.h library
 #include <Arduino.h>
-#include <AccelStepper.h>
+#include <AccelStepperImpl.h>
 
 #define DEBUG false // To enable debug logic
-#define ROT_MULTI 5 // Number of times to per a loop 
-#define ROT_STEPS 4096 // Number of steps for 1 Rotation
-#define ROT_SPEED 2000 // Speed ​​of 300 (max) reduce this figure for slower movement
-#define ROT_ACCEL 1000 // Speed ​​of 300 (max) reduce this figure for slower movement
 #define ROT_COUNT 30 // number of rotations per a cycle
 #define PAUSE_COUNT 300 // number of times to pause using in seconds
 #define BUTTON1 10 // Pin number to which push button 1 is connected
@@ -25,17 +21,6 @@ bool serial_init = false;
 int counter = 0;
 int button_state1 = 0;    // variable that will be used to store the state of button 1
 int button_state2 = 0;    // variable that will be used to store the state of button 2
-
-// Create instances of the stepper class
-// The motor (wires 1 2 3 4) is connected to the outputs 9 10 11 12 of the Arduino (and to GND, + V)
-AccelStepper small_stepper1(AccelStepper::HALF4WIRE, 2, 4, 3, 5);      // Clockwise
-AccelStepper small_stepper2(AccelStepper::HALF4WIRE, 6, 8, 7, 9);      // Clockwise
-
-// Number of rotation steps requested from the motor.
-// One full rotation with 2048 steps (1 turn about 4.5sec)
-// To turn upside down 6 times 1 / 30th of a turn, simply multiply steps_to_take by 6/30 and put a minus to reverse the direction
-// Example  steps_to_take  = -6*2048/30;
-long const steps_to_take = ROT_STEPS * (long)ROT_MULTI;
 
 // Rotation time for one turn for debuggin
 long rotation_time = 0;
@@ -83,11 +68,7 @@ void setup()
     pinMode(BUTTON1, INPUT_PULLUP);
     pinMode(BUTTON2, INPUT_PULLUP);
     // initialize the stepper motor speed
-    small_stepper1.setMaxSpeed(ROT_SPEED);
-    small_stepper2.setMaxSpeed(ROT_SPEED);
-    small_stepper1.setAcceleration(ROT_ACCEL);
-    small_stepper2.setAcceleration(ROT_ACCEL);
-    // 100 allows a high torque > 300 the motor vibrates without turning
+    stepperInitialize();
 }
 
 void loop()
@@ -112,8 +93,7 @@ void loop()
             digitalWrite(LED2, LOW); // Turn off Led 2
 
             rotation_time = millis();
-            small_stepper1.runToNewPosition(-steps_to_take);  //It turns
-            small_stepper1.runToNewPosition(0);  //It turns
+            stepperRun(0);
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(25000);  //pause
@@ -127,8 +107,7 @@ void loop()
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
             rotation_time = millis();
-            small_stepper2.runToNewPosition(steps_to_take);  //It turns
-            small_stepper2.runToNewPosition(0);  //It turns
+            stepperRun(1);
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(25000);  //pause
@@ -142,15 +121,13 @@ void loop()
             digitalWrite(LED2, HIGH); // Turn on Led 2
 
             rotation_time = millis();
-            small_stepper1.runToNewPosition(-steps_to_take);  //It turns
-            small_stepper1.runToNewPosition(0);  //It turns
+            stepperRun(0);
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time);      // Displays the rotation_time (in ms) for a full revolution
             delay(2500);  //pause
 
             rotation_time = millis();
-            small_stepper2.runToNewPosition(steps_to_take);  //It turns
-            small_stepper2.runToNewPosition(0);  //It turns
+            stepperRun(1);
             rotation_time =  millis() - rotation_time ;  // Timer a full rour 6.236 sec per lap at speed 200
             serailPrintRotationLine(rotation_time); // Displays the rotation_time (in ms) for a full revolution
             delay(2500);  //pause
